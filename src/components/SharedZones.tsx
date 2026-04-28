@@ -18,19 +18,19 @@ export default function SharedZones({ library, graveyard, onGraveyardClick }: Sh
       <div className="flex flex-col items-center gap-1">
         <div className="relative">
           {library.length > 2 && (
-            <div className="absolute -bottom-1 -right-1 w-16 h-[88px] card-back rounded-lg opacity-30" />
+            <div className="absolute -bottom-1 -right-1 w-[76px] h-[106px] card-back rounded-lg opacity-30" />
           )}
           {library.length > 1 && (
-            <div className="absolute -bottom-0.5 -right-0.5 w-16 h-[88px] card-back rounded-lg opacity-50" />
+            <div className="absolute -bottom-0.5 -right-0.5 w-[76px] h-[106px] card-back rounded-lg opacity-50" />
           )}
           <motion.div
-            className="w-16 h-[88px] card-back rounded-lg flex items-center justify-center relative"
+            className="w-[76px] h-[106px] card-back rounded-lg flex items-center justify-center relative"
             whileHover={{ scale: 1.05 }}
           >
-            <span className="text-wave-slate/30 text-lg">🐠</span>
+            <span className="text-wave-slate/30 text-xl">🐠</span>
           </motion.div>
         </div>
-        <div className="text-wave-slate text-[10px] font-mono">
+        <div className="text-wave-slate text-xs font-mono">
           Library ({library.length})
         </div>
       </div>
@@ -44,7 +44,7 @@ export default function SharedZones({ library, graveyard, onGraveyardClick }: Sh
       <div className="flex flex-col items-center gap-1">
         <motion.div
           className={`
-            w-16 h-[88px] rounded-lg flex items-center justify-center
+            w-[76px] h-[106px] rounded-lg flex items-center justify-center
             ${graveyard.length > 0
               ? 'bg-wave-deep/80 border border-wave-indigo/30 cursor-pointer'
               : 'bg-wave-deepest/50 border border-wave-indigo/15'
@@ -54,15 +54,15 @@ export default function SharedZones({ library, graveyard, onGraveyardClick }: Sh
           whileHover={graveyard.length > 0 ? { scale: 1.05 } : {}}
         >
           {topGraveyardDef ? (
-            <div className="text-center p-1">
-              <div className="text-[7px] text-wave-foam/80 truncate">{topGraveyardDef.name}</div>
-              <div className="text-[6px] text-wave-slate/60">{topGraveyardDef.type}</div>
+            <div className="text-center p-1.5">
+              <div className="text-[10px] text-wave-foam/80 truncate">{topGraveyardDef.name}</div>
+              <div className="text-[8px] text-wave-slate/60">{topGraveyardDef.type}</div>
             </div>
           ) : (
             <span className="text-wave-indigo/30 text-xs">empty</span>
           )}
         </motion.div>
-        <div className="text-wave-slate text-[10px] font-mono">
+        <div className="text-wave-slate text-xs font-mono">
           Graveyard ({graveyard.length})
         </div>
       </div>

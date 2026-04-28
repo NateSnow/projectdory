@@ -18,12 +18,11 @@ export default function Battlefield({
   interactive = false,
   flipped = false,
 }: BattlefieldProps) {
-  // Separate lands from non-lands
   const lands = cards.filter(c => getCardDefinition(c.definitionId).type === 'land')
   const nonLands = cards.filter(c => getCardDefinition(c.definitionId).type !== 'land')
 
   const renderRow = (rowCards: CardInstance[], label: string) => (
-    <div className="flex gap-1.5 items-center justify-center flex-wrap">
+    <div className="flex gap-2 items-center justify-center flex-wrap">
       {rowCards.length === 0 ? (
         <div className="text-wave-indigo/40 text-xs italic">{label}</div>
       ) : (
@@ -42,6 +41,7 @@ export default function Battlefield({
               onClick={() => onCardClick?.(card.id)}
               highlighted={selectedCardId === card.id}
               interactive={interactive}
+              showHoverPreview={interactive}
             />
           </motion.div>
         ))
