@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
@@ -12,9 +12,10 @@ import GameLog from './GameLog'
 
 export default function GameBoard() {
   const navigate = useNavigate()
-  const [selectedCard, setSelectedCard] = useState<string | null>(null)
   const [logOpen, setLogOpen] = useState(false)
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null)
   const cpuTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const {
     players, sharedLibrary, sharedGraveyard,
@@ -29,10 +30,53 @@ export default function GameBoard() {
   const player1 = players['player1']!
   const player2 = players['player2']!
   const isMyPriority = priorityPlayer === 'player1'
+  const isMyTurn = activePlayer === 'player1'
+
+  // ─── Show brief feedback messages ───────────────────────────────────
+  const showFeedback = useCallback((msg: string) => {
+    setActionFeedback(msg)
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current)
+    feedbackTimerRef.current = setTimeout(() => setActionFeedback(null), 2000)
+  }, [])
+
+  // ─── Compute which cards in hand are playable ───────────────────────
+  const playableCardIds = useMemo(() => {
+    if (!isMyPriority || waitingForMulligan || gameOver) return new Set<string>()
+
+    const ids = new Set<string>()
+    const untappedLandCount = player1.battlefield.filter(c => {
+      const d = getCardDefinition(c.definitionId)
+      return d.type === 'land' && !c.tapped
+    }).length
+    const totalMana = player1.manaPool + untappedLandCount
+
+    for (const card of player1.hand) {
+      const def = getCardDefinition(card.definitionId)
+
+      if (def.type === 'land') {
+        // Can play a land if: it's our main phase, our turn, haven't played one yet, stack empty
+        if (isMyTurn && !player1.landPlayedThisTurn &&
+            (phase === 'main1' || phase === 'main2') && stack.length === 0) {
+          ids.add(card.id)
+        }
+      } else {
+        // Can cast a spell if we have enough mana
+        if (totalMana < def.cmc) continue
+
+        // Sorcery-speed cards need: our turn, main phase, empty stack
+        if (def.type === 'sorcery' || def.type === 'creature' || def.type === 'enchantment') {
+          if (!isMyTurn || (phase !== 'main1' && phase !== 'main2') || stack.length > 0) continue
+        }
+
+        ids.add(card.id)
+      }
+    }
+
+    return ids
+  }, [isMyPriority, isMyTurn, waitingForMulligan, gameOver, player1.hand, player1.battlefield,
+      player1.manaPool, player1.landPlayedThisTurn, phase, stack.length])
 
   // ─── CPU Game Loop ──────────────────────────────────────────────────
-  // The CPU acts whenever it has priority or needs to make a mulligan decision.
-  // We use a timer to add a natural delay between CPU actions.
   useEffect(() => {
     if (mode !== 'cpu' || gameOver) return
 
@@ -42,10 +86,8 @@ export default function GameBoard() {
 
     if (!cpuNeedsToAct) return
 
-    // Clear any existing timer
     if (cpuTimerRef.current) clearTimeout(cpuTimerRef.current)
 
-    // Add delay for natural feel
     const delay = waitingForMulligan ? 800 : stack.length > 0 ? 1000 : 500
     cpuTimerRef.current = setTimeout(() => {
       runCpuAction()
@@ -56,29 +98,57 @@ export default function GameBoard() {
     }
   }, [mode, gameOver, priorityPlayer, waitingForMulligan, player2.hasKeptHand, phase, stack.length, runCpuAction])
 
-  // ─── Handle card click from hand ────────────────────────────────────
+  // ─── Handle card click from hand — Arena-style single click ─────────
   const handleHandCardClick = useCallback((cardId: string) => {
-    if (!isMyPriority && !waitingForMulligan) return
+    if (waitingForMulligan) return // during mulligan, cards aren't playable
+
+    if (!isMyPriority) {
+      showFeedback("Not your priority — wait for opponent")
+      return
+    }
 
     const card = player1.hand.find(c => c.id === cardId)
     if (!card) return
 
     const def = getCardDefinition(card.definitionId)
 
-    if (selectedCard === cardId) {
-      // Double-click to play
-      if (def.type === 'land') {
-        playLand('player1', cardId)
-      } else if (player1.manaPool >= def.cmc) {
-        castSpell('player1', cardId)
+    // Land — just play it
+    if (def.type === 'land') {
+      if (!playableCardIds.has(cardId)) {
+        if (player1.landPlayedThisTurn) {
+          showFeedback("Already played a land this turn")
+        } else {
+          showFeedback("Can only play lands during your main phase")
+        }
+        return
       }
-      setSelectedCard(null)
-    } else {
-      setSelectedCard(cardId)
+      playLand('player1', cardId)
+      showFeedback(`Played ${def.name}`)
+      return
     }
-  }, [isMyPriority, waitingForMulligan, player1.hand, player1.manaPool, selectedCard, playLand, castSpell])
 
-  // ─── Handle battlefield card click (tap for mana) ───────────────────
+    // Spell — auto-tap and cast
+    if (!playableCardIds.has(cardId)) {
+      const untappedLandCount = player1.battlefield.filter(c => {
+        const d = getCardDefinition(c.definitionId)
+        return d.type === 'land' && !c.tapped
+      }).length
+      const totalMana = player1.manaPool + untappedLandCount
+
+      if (totalMana < def.cmc) {
+        showFeedback(`Need ${def.cmc} mana, have ${totalMana}`)
+      } else {
+        showFeedback("Can't cast that right now")
+      }
+      return
+    }
+
+    castSpell('player1', cardId)
+    showFeedback(`Cast ${def.name}`)
+  }, [isMyPriority, waitingForMulligan, player1.hand, player1.battlefield, player1.manaPool,
+      player1.landPlayedThisTurn, playableCardIds, playLand, castSpell, showFeedback])
+
+  // ─── Handle battlefield card click (manual tap for mana) ────────────
   const handleBattlefieldClick = useCallback((cardId: string) => {
     const card = player1.battlefield.find(c => c.id === cardId)
     if (!card) return
@@ -91,7 +161,7 @@ export default function GameBoard() {
 
   // ─── Handle attack ──────────────────────────────────────────────────
   const handleAttack = useCallback(() => {
-    if (phase !== 'declare_attackers' || activePlayer !== 'player1') return
+    if (phase !== 'declare_attackers' || !isMyTurn) return
 
     const dandanIds = player1.battlefield
       .filter(c => {
@@ -101,15 +171,13 @@ export default function GameBoard() {
       .map(c => c.id)
 
     declareAttackers('player1', dandanIds)
-  }, [phase, activePlayer, player1.battlefield, declareAttackers])
+  }, [phase, isMyTurn, player1.battlefield, declareAttackers])
 
-  // ─── Handle skip attack ─────────────────────────────────────────────
   const handleSkipAttack = useCallback(() => {
-    if (phase !== 'declare_attackers' || activePlayer !== 'player1') return
+    if (phase !== 'declare_attackers' || !isMyTurn) return
     declareAttackers('player1', [])
-  }, [phase, activePlayer, declareAttackers])
+  }, [phase, isMyTurn, declareAttackers])
 
-  // ─── Count playable Dandân for attack button ────────────────────────
   const attackableDandanCount = player1.battlefield.filter(c => {
     const def = getCardDefinition(c.definitionId)
     return def.id === 'dandan' && !c.tapped && !c.summoningSick
@@ -119,6 +187,21 @@ export default function GameBoard() {
     <div className="h-full w-full wave-board-bg flex flex-col relative overflow-hidden">
       {/* Game Log */}
       <GameLog entries={gameLog} isOpen={logOpen} onToggle={() => setLogOpen(!logOpen)} />
+
+      {/* Action feedback toast */}
+      <AnimatePresence>
+        {actionFeedback && (
+          <motion.div
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
+                       glass-panel px-5 py-2.5 text-sm text-wave-cream font-body pointer-events-none"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+          >
+            {actionFeedback}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Opponent info bar */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-wave-indigo/20">
@@ -131,18 +214,18 @@ export default function GameBoard() {
       </div>
 
       {/* Opponent hand (face down) */}
-      <div className="flex justify-center py-2">
+      <div className="flex justify-center py-1">
         <Hand cards={player2.hand} faceDown label={`${player2.name}'s Hand`} />
       </div>
 
       {/* Opponent battlefield */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0">
         <div className="border-b border-wave-indigo/15 py-1">
           <Battlefield cards={player2.battlefield} flipped />
         </div>
 
         {/* Shared zones (library + graveyard) */}
-        <div className="py-3 px-8">
+        <div className="py-2 px-8">
           <SharedZones
             library={sharedLibrary}
             graveyard={sharedGraveyard}
@@ -153,7 +236,7 @@ export default function GameBoard() {
         <AnimatePresence>
           {stack.length > 0 && (
             <motion.div
-              className="flex justify-center gap-2 py-2"
+              className="flex justify-center gap-2 py-1"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -194,12 +277,12 @@ export default function GameBoard() {
       </div>
 
       {/* Your hand */}
-      <div className="flex justify-center py-2">
+      <div className="flex justify-center py-1">
         <Hand
           cards={player1.hand}
           onCardClick={handleHandCardClick}
-          selectedCardId={selectedCard}
           interactive={isMyPriority || waitingForMulligan}
+          playableCardIds={playableCardIds}
           label="Your Hand"
         />
       </div>
@@ -208,20 +291,20 @@ export default function GameBoard() {
       <div className="flex items-center justify-between px-4 py-2 border-t border-wave-indigo/20">
         <PlayerInfo
           player={player1}
-          isActive={activePlayer === 'player1'}
-          hasPriority={priorityPlayer === 'player1'}
+          isActive={isMyTurn}
+          hasPriority={isMyPriority}
         />
 
         <div className="flex gap-2 items-center">
           {/* Phase hint */}
           {!waitingForMulligan && isMyPriority && !gameOver && (
             <span className="text-wave-slate text-xs mr-2">
-              {phase === 'declare_attackers' && activePlayer === 'player1'
+              {phase === 'declare_attackers' && isMyTurn
                 ? 'Declare attackers'
                 : stack.length > 0
                   ? 'Respond or pass'
                   : phase === 'main1' || phase === 'main2'
-                    ? 'Play cards or pass'
+                    ? 'Click a card to play it'
                     : 'Pass to continue'
               }
             </span>
@@ -240,7 +323,7 @@ export default function GameBoard() {
           )}
 
           {/* Attack buttons */}
-          {phase === 'declare_attackers' && activePlayer === 'player1' && isMyPriority && (
+          {phase === 'declare_attackers' && isMyTurn && isMyPriority && (
             <>
               {attackableDandanCount > 0 && (
                 <button onClick={handleAttack} className="btn-primary text-sm">

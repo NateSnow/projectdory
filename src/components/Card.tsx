@@ -16,6 +16,8 @@ interface CardProps {
   className?: string
   /** Show a large hover preview floating above the card */
   showHoverPreview?: boolean
+  /** Card can be played right now — show green glow */
+  playable?: boolean
 }
 
 const SIZE_MAP = {
@@ -38,6 +40,7 @@ export default function Card({
   interactive = false,
   className = '',
   showHoverPreview = false,
+  playable = false,
 }: CardProps) {
   const [imgError, setImgError] = useState(false)
   const [useFallback, setUseFallback] = useState(false)
@@ -88,7 +91,8 @@ export default function Card({
       <div
         className={`
           w-full h-full rounded-lg overflow-hidden
-          ${highlighted ? 'ring-2 ring-wave-crest shadow-glow' : 'shadow-card'}
+          ${playable ? 'ring-2 ring-green-400/70 shadow-[0_0_12px_rgba(74,222,128,0.3)]' :
+            highlighted ? 'ring-2 ring-wave-crest shadow-glow' : 'shadow-card'}
           ${interactive ? 'hover:shadow-card-hover' : ''}
         `}
       >

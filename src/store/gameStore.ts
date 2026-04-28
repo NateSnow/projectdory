@@ -273,7 +273,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // CAST SPELL (goes on the stack)
+  // CAST SPELL (goes on the stack) — with Arena-style auto-tap
+  //
+  // Like MTG Arena: clicking a spell auto-taps lands to pay for it.
+  // The player doesn't need to manually tap lands first.
+  // We tap basic Islands first, then utility lands, preserving the most
+  // valuable untapped lands.
   // ═══════════════════════════════════════════════════════════════════════════
 
   castSpell: (playerId: string, cardInstanceId: string) => {
@@ -287,9 +292,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const card = player.hand[cardIndex]!
       const def = getCardDefinition(card.definitionId)
 
-      // Check mana
-      if (player.manaPool < def.cmc) return state
-
       // Sorcery-speed check: must be active player, main phase, empty stack
       if (def.type === 'sorcery' || def.type === 'creature' || def.type === 'enchantment') {
         if (state.activePlayer !== playerId) return state
@@ -297,9 +299,61 @@ export const useGameStore = create<GameStore>((set, get) => ({
         if (state.stack.length > 0) return state
       }
 
-      // Instant-speed: can cast anytime you have priority
-      // (already guaranteed by the caller checking priorityPlayer)
+      // ─── Auto-tap lands to pay the mana cost ─────────────────────
+      // Count total available mana (already floating + untapped lands)
+      const untappedLands = player.battlefield.filter(c => {
+        const d = getCardDefinition(c.definitionId)
+        return d.type === 'land' && !c.tapped
+      })
+      const totalAvailable = player.manaPool + untappedLands.length
+      if (totalAvailable < def.cmc) return state // can't afford it
 
+      // Figure out how much more mana we need beyond what's floating
+      const manaNeeded = def.cmc - player.manaPool
+      let newManaPool = player.manaPool
+      const newBattlefield = [...player.battlefield]
+
+      if (manaNeeded > 0) {
+        // Sort lands for tapping priority:
+        // 1. Basic Islands first (least valuable to keep untapped)
+        // 2. Lands that only tap for mana (Lonely Sandbar, Remote Isle, etc.)
+        // 3. Utility lands last (Mystic Sanctuary, Halimar Depths, etc.)
+        const landPriority: Record<string, number> = {
+          island: 0,
+          lonely_sandbar: 1,
+          remote_isle: 1,
+          svyelunite_temple: 1,
+          the_surgical_bay: 2,
+          haunted_fengraf: 3,
+          mystic_sanctuary: 3,
+          halimar_depths: 3,
+        }
+
+        const untappedIndices = newBattlefield
+          .map((c, i) => ({ card: c, index: i }))
+          .filter(({ card }) => {
+            const d = getCardDefinition(card.definitionId)
+            return d.type === 'land' && !card.tapped
+          })
+          .sort((a, b) => {
+            const pa = landPriority[a.card.definitionId] ?? 5
+            const pb = landPriority[b.card.definitionId] ?? 5
+            return pa - pb
+          })
+
+        let tapped = 0
+        for (const { index } of untappedIndices) {
+          if (tapped >= manaNeeded) break
+          newBattlefield[index] = { ...newBattlefield[index]!, tapped: true }
+          newManaPool++
+          tapped++
+        }
+      }
+
+      // Spend the mana
+      newManaPool -= def.cmc
+
+      // Remove card from hand
       const newHand = [...player.hand]
       newHand.splice(cardIndex, 1)
 
@@ -310,8 +364,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
         caster: playerId,
       }
 
-      // After casting, the caster retains priority (MTG rule: caster gets priority
-      // back after casting, then passes to opponent). We simplify: give opponent priority.
       const opp = opponentOf(state, playerId)
 
       return {
@@ -321,12 +373,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
           [playerId]: {
             ...player,
             hand: newHand,
-            manaPool: player.manaPool - def.cmc,
+            battlefield: newBattlefield,
+            manaPool: newManaPool,
           },
         },
         stack: [...state.stack, stackItem],
         priorityPlayer: opp,
-        lastPasser: null, // reset — new spell means both need to pass again
+        lastPasser: null,
         gameLog: [
           ...state.gameLog,
           log(state, player.name, `cast ${def.name}`),

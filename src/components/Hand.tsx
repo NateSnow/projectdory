@@ -9,6 +9,8 @@ interface HandProps {
   selectedCardId?: string | null
   interactive?: boolean
   label?: string
+  /** Set of card instance IDs that can currently be played */
+  playableCardIds?: Set<string>
 }
 
 export default function Hand({
@@ -18,10 +20,10 @@ export default function Hand({
   selectedCardId,
   interactive = false,
   label,
+  playableCardIds,
 }: HandProps) {
   const cardCount = cards.length
   const cardWidth = faceDown ? 80 : 130
-  // Spread cards wider to accommodate bigger size
   const maxSpread = 600
   const totalWidth = Math.min(cardCount * 80, maxSpread)
   const spacing = cardCount > 1 ? totalWidth / (cardCount - 1) : 0
@@ -46,6 +48,7 @@ export default function Hand({
             ? (index - (cardCount - 1) / 2) * 2.5
             : 0
           const yOffset = Math.abs(index - (cardCount - 1) / 2) * 3
+          const isPlayable = playableCardIds?.has(card.id) ?? false
 
           return (
             <motion.div
@@ -69,9 +72,10 @@ export default function Hand({
                 faceDown={faceDown}
                 size={faceDown ? 'sm' : 'md'}
                 onClick={() => onCardClick?.(card.id)}
-                highlighted={selectedCardId === card.id}
+                highlighted={selectedCardId === card.id || isPlayable}
                 interactive={interactive}
                 showHoverPreview={!faceDown && interactive}
+                playable={isPlayable}
               />
             </motion.div>
           )
