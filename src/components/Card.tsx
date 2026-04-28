@@ -55,7 +55,7 @@ export default function Card({
         style={{ width: dimensions.width, height: dimensions.height }}
         whileHover={interactive ? { y: -4 } : {}}
       >
-        <div className="text-ocean-500/30 text-2xl font-display">🐠</div>
+        <div className="text-wave-slate/30 text-2xl font-display">🐠</div>
       </motion.div>
     )
   }
@@ -64,7 +64,7 @@ export default function Card({
     <motion.div
       className={`
         relative rounded-lg overflow-hidden cursor-pointer select-none
-        ${highlighted ? 'ring-2 ring-dory-glow shadow-glow' : 'shadow-card'}
+        ${highlighted ? 'ring-2 ring-wave-crest shadow-glow' : 'shadow-card'}
         ${interactive ? 'hover:shadow-card-hover' : ''}
         ${tapped ? 'rotate-90' : ''}
         ${className}
@@ -92,16 +92,16 @@ export default function Card({
         />
       ) : (
         /* Fallback text card */
-        <div className="w-full h-full bg-ocean-900 border border-ocean-700 rounded-lg p-1.5 flex flex-col">
-          <div className="text-[8px] font-bold text-ocean-200 truncate">{def.name}</div>
-          <div className="text-[7px] text-ocean-400 truncate">{def.manaCost}</div>
+        <div className="w-full h-full bg-wave-deep border border-wave-indigo rounded-lg p-1.5 flex flex-col">
+          <div className="text-[8px] font-bold text-wave-foam truncate">{def.name}</div>
+          <div className="text-[7px] text-wave-slate truncate">{def.manaCost}</div>
           <div className="flex-1 mt-1">
-            <div className="text-[6px] text-ocean-500 leading-tight line-clamp-4">
+            <div className="text-[6px] text-wave-slate/70 leading-tight line-clamp-4">
               {def.oracleText}
             </div>
           </div>
           {def.power !== undefined && (
-            <div className="text-[8px] text-ocean-300 text-right">
+            <div className="text-[8px] text-wave-foam/80 text-right">
               {def.power}/{def.toughness}
             </div>
           )}

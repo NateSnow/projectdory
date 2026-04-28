@@ -28,7 +28,7 @@ export default function Hand({
   return (
     <div className="flex flex-col items-center">
       {label && (
-        <div className="text-ocean-500 text-xs mb-1 font-body">{label}</div>
+        <div className="text-wave-slate text-xs mb-1 font-body">{label}</div>
       )}
       <div
         className="relative flex items-end justify-center"

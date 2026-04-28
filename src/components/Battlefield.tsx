@@ -25,7 +25,7 @@ export default function Battlefield({
   const renderRow = (rowCards: CardInstance[], label: string) => (
     <div className="flex gap-1.5 items-center justify-center flex-wrap">
       {rowCards.length === 0 ? (
-        <div className="text-ocean-700/40 text-xs italic">{label}</div>
+        <div className="text-wave-indigo/40 text-xs italic">{label}</div>
       ) : (
         rowCards.map((card) => (
           <motion.div

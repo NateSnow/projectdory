@@ -31,13 +31,12 @@ const DISPLAY_PHASES: GamePhase[] = [
 export default function PhaseTracker({ currentPhase, turnNumber }: PhaseTrackerProps) {
   return (
     <div className="flex items-center gap-2">
-      <div className="text-ocean-500 text-xs font-mono mr-2">
+      <div className="text-wave-slate text-xs font-mono mr-2">
         Turn {turnNumber}
       </div>
       <div className="flex gap-1">
         {DISPLAY_PHASES.map((phase) => {
           const isActive = phase === currentPhase
-          // Also highlight if we're in a sub-phase of combat
           const isCombatSubPhase = phase === 'combat_begin' && [
             'combat_begin', 'declare_attackers', 'declare_blockers',
             'combat_damage', 'combat_end',
@@ -51,8 +50,8 @@ export default function PhaseTracker({ currentPhase, turnNumber }: PhaseTrackerP
               className={`
                 px-2 py-0.5 rounded text-[10px] font-body transition-all
                 ${highlighted
-                  ? 'phase-active bg-ocean-800/60 border border-dory-glow/30'
-                  : 'text-ocean-600 bg-ocean-950/30'
+                  ? 'phase-active bg-wave-prussian/60 border border-wave-crest/25'
+                  : 'text-wave-indigo bg-wave-deepest/40'
                 }
               `}
               animate={highlighted ? { scale: 1.05 } : { scale: 1 }}
@@ -63,7 +62,7 @@ export default function PhaseTracker({ currentPhase, turnNumber }: PhaseTrackerP
         })}
       </div>
       {currentPhase === 'mulligan' && (
-        <div className="text-dory-glow text-xs animate-pulse ml-2">
+        <div className="text-wave-crest text-xs animate-pulse ml-2">
           Mulligan Phase
         </div>
       )}

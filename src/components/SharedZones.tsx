@@ -17,7 +17,6 @@ export default function SharedZones({ library, graveyard, onGraveyardClick }: Sh
       {/* Shared Library */}
       <div className="flex flex-col items-center gap-1">
         <div className="relative">
-          {/* Stack effect */}
           {library.length > 2 && (
             <div className="absolute -bottom-1 -right-1 w-16 h-[88px] card-back rounded-lg opacity-30" />
           )}
@@ -28,17 +27,17 @@ export default function SharedZones({ library, graveyard, onGraveyardClick }: Sh
             className="w-16 h-[88px] card-back rounded-lg flex items-center justify-center relative"
             whileHover={{ scale: 1.05 }}
           >
-            <span className="text-ocean-400/40 text-lg">🐠</span>
+            <span className="text-wave-slate/30 text-lg">🐠</span>
           </motion.div>
         </div>
-        <div className="text-ocean-500 text-[10px] font-mono">
+        <div className="text-wave-slate text-[10px] font-mono">
           Library ({library.length})
         </div>
       </div>
 
-      {/* Phase / Stack area placeholder */}
+      {/* Center divider */}
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-ocean-700/30 text-xs italic">shared zones</div>
+        <div className="wave-divider w-full" />
       </div>
 
       {/* Shared Graveyard */}
@@ -47,8 +46,8 @@ export default function SharedZones({ library, graveyard, onGraveyardClick }: Sh
           className={`
             w-16 h-[88px] rounded-lg flex items-center justify-center
             ${graveyard.length > 0
-              ? 'bg-ocean-900/60 border border-ocean-700/40 cursor-pointer'
-              : 'bg-ocean-950/30 border border-ocean-800/20'
+              ? 'bg-wave-deep/80 border border-wave-indigo/30 cursor-pointer'
+              : 'bg-wave-deepest/50 border border-wave-indigo/15'
             }
           `}
           onClick={onGraveyardClick}
@@ -56,14 +55,14 @@ export default function SharedZones({ library, graveyard, onGraveyardClick }: Sh
         >
           {topGraveyardDef ? (
             <div className="text-center p-1">
-              <div className="text-[7px] text-ocean-300 truncate">{topGraveyardDef.name}</div>
-              <div className="text-[6px] text-ocean-500">{topGraveyardDef.type}</div>
+              <div className="text-[7px] text-wave-foam/80 truncate">{topGraveyardDef.name}</div>
+              <div className="text-[6px] text-wave-slate/60">{topGraveyardDef.type}</div>
             </div>
           ) : (
-            <span className="text-ocean-700/30 text-xs">empty</span>
+            <span className="text-wave-indigo/30 text-xs">empty</span>
           )}
         </motion.div>
-        <div className="text-ocean-500 text-[10px] font-mono">
+        <div className="text-wave-slate text-[10px] font-mono">
           Graveyard ({graveyard.length})
         </div>
       </div>

@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-dory-deeper text-white font-body antialiased;
+    @apply bg-wave-deepest text-white font-body antialiased;
     overflow: hidden;
   }
 
@@ -15,55 +15,106 @@
 
 @layer components {
   .card-back {
-    @apply rounded-lg border-2 border-ocean-700/50;
-    background: linear-gradient(135deg, #1a3a5c 0%, #0d2847 50%, #1a3a5c 100%);
+    @apply rounded-lg border-2 border-wave-indigo/50;
+    background: linear-gradient(
+      135deg,
+      #1b3a5c 0%,
+      #1a2f4a 30%,
+      #2a4a6e 50%,
+      #1a2f4a 70%,
+      #1b3a5c 100%
+    );
     background-size: 200% 200%;
   }
 
   .btn-primary {
     @apply px-6 py-3 rounded-lg font-display font-semibold text-white
-           bg-gradient-to-r from-ocean-600 to-ocean-700
-           hover:from-ocean-500 hover:to-ocean-600
-           active:from-ocean-700 active:to-ocean-800
+           bg-gradient-to-r from-wave-indigo to-wave-prussian
+           hover:from-wave-indigo/90 hover:to-wave-prussian/90
+           active:from-wave-prussian active:to-wave-deepest
            transition-all duration-200 shadow-lg
-           hover:shadow-glow hover:-translate-y-0.5;
+           hover:shadow-wave hover:-translate-y-0.5;
   }
 
   .btn-secondary {
-    @apply px-4 py-2 rounded-lg font-body text-ocean-200
-           border border-ocean-600/50 bg-ocean-900/30
-           hover:bg-ocean-800/40 hover:border-ocean-500/60
+    @apply px-4 py-2 rounded-lg font-body text-wave-foam
+           border border-wave-indigo/50 bg-wave-deepest/50
+           hover:bg-wave-prussian/40 hover:border-wave-indigo/70
            transition-all duration-200;
   }
 
   .glass-panel {
-    @apply bg-ocean-950/60 backdrop-blur-md border border-ocean-700/30 rounded-xl;
+    @apply bg-wave-deepest/70 backdrop-blur-md border border-wave-indigo/25 rounded-xl;
   }
 
   .phase-active {
-    @apply text-dory-glow font-semibold;
-    text-shadow: 0 0 8px rgba(79, 195, 247, 0.5);
+    @apply text-wave-crest font-semibold;
+    text-shadow: 0 0 8px rgba(200, 220, 240, 0.5);
   }
 
   .zone-highlight {
-    @apply ring-2 ring-dory-glow/40 ring-offset-2 ring-offset-dory-dark;
+    @apply ring-2 ring-wave-crest/40 ring-offset-2 ring-offset-wave-deepest;
+  }
+
+  /* Great Wave background for main menu */
+  .wave-bg {
+    background-image:
+      linear-gradient(
+        to bottom,
+        rgba(10, 15, 30, 0.3) 0%,
+        rgba(10, 15, 30, 0.15) 30%,
+        rgba(10, 15, 30, 0.15) 70%,
+        rgba(10, 15, 30, 0.6) 100%
+      ),
+      url('https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Tsunami_by_hokusai_19th_century.jpg/2560px-Tsunami_by_hokusai_19th_century.jpg');
+    background-size: cover;
+    background-position: center 40%;
+    background-repeat: no-repeat;
+  }
+
+  /* Subtle wave texture for game board */
+  .wave-board-bg {
+    background:
+      linear-gradient(
+        180deg,
+        #0a0f1e 0%,
+        #0f1a2e 15%,
+        #142640 40%,
+        #1a3050 60%,
+        #142640 80%,
+        #0a0f1e 100%
+      );
+  }
+
+  /* Hokusai-style decorative wave border */
+  .wave-divider {
+    position: relative;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(107, 142, 180, 0.3) 20%,
+      rgba(107, 142, 180, 0.5) 50%,
+      rgba(107, 142, 180, 0.3) 80%,
+      transparent 100%
+    );
   }
 }
 
-/* Scrollbar styling */
+/* Scrollbar styling — indigo tones */
 ::-webkit-scrollbar {
   width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(10, 22, 40, 0.5);
+  background: rgba(10, 15, 30, 0.5);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(79, 195, 247, 0.3);
+  background: rgba(107, 142, 180, 0.3);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(79, 195, 247, 0.5);
+  background: rgba(107, 142, 180, 0.5);
 }

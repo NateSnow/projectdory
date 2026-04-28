@@ -116,12 +116,12 @@ export default function GameBoard() {
   }).length
 
   return (
-    <div className="h-full w-full bg-ocean-gradient flex flex-col relative overflow-hidden">
+    <div className="h-full w-full wave-board-bg flex flex-col relative overflow-hidden">
       {/* Game Log */}
       <GameLog entries={gameLog} isOpen={logOpen} onToggle={() => setLogOpen(!logOpen)} />
 
       {/* Opponent info bar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-ocean-800/30">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-wave-indigo/20">
         <PlayerInfo
           player={player2}
           isActive={activePlayer === 'player2'}
@@ -137,7 +137,7 @@ export default function GameBoard() {
 
       {/* Opponent battlefield */}
       <div className="flex-1 flex flex-col">
-        <div className="border-b border-ocean-800/20 py-1">
+        <div className="border-b border-wave-indigo/15 py-1">
           <Battlefield cards={player2.battlefield} flipped />
         </div>
 
@@ -158,8 +158,8 @@ export default function GameBoard() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
             >
-              <div className="glass-panel px-3 py-2 border-dory-glow/30">
-                <div className="text-[10px] text-ocean-500 mb-1">Stack</div>
+              <div className="glass-panel px-3 py-2 border-wave-crest/20">
+                <div className="text-[10px] text-wave-slate mb-1">Stack</div>
                 <div className="flex flex-col-reverse gap-1">
                   {stack.map((item, i) => {
                     const def = getCardDefinition(item.definitionId)
@@ -169,11 +169,11 @@ export default function GameBoard() {
                         key={item.id}
                         className={`text-xs px-2 py-1 rounded ${
                           i === stack.length - 1
-                            ? 'text-dory-glow bg-ocean-800/60'
-                            : 'text-ocean-400 bg-ocean-900/40'
+                            ? 'text-wave-crest bg-wave-prussian/60'
+                            : 'text-wave-slate bg-wave-deep/60'
                         }`}
                       >
-                        {def.name} <span className="text-ocean-500">({casterName})</span>
+                        {def.name} <span className="text-wave-indigo">({casterName})</span>
                       </div>
                     )
                   })}
@@ -184,7 +184,7 @@ export default function GameBoard() {
         </AnimatePresence>
 
         {/* Your battlefield */}
-        <div className="border-t border-ocean-800/20 py-1">
+        <div className="border-t border-wave-indigo/15 py-1">
           <Battlefield
             cards={player1.battlefield}
             onCardClick={handleBattlefieldClick}
@@ -205,7 +205,7 @@ export default function GameBoard() {
       </div>
 
       {/* Your info bar + action buttons */}
-      <div className="flex items-center justify-between px-4 py-2 border-t border-ocean-800/30">
+      <div className="flex items-center justify-between px-4 py-2 border-t border-wave-indigo/20">
         <PlayerInfo
           player={player1}
           isActive={activePlayer === 'player1'}
@@ -215,7 +215,7 @@ export default function GameBoard() {
         <div className="flex gap-2 items-center">
           {/* Phase hint */}
           {!waitingForMulligan && isMyPriority && !gameOver && (
-            <span className="text-ocean-500 text-xs mr-2">
+            <span className="text-wave-slate text-xs mr-2">
               {phase === 'declare_attackers' && activePlayer === 'player1'
                 ? 'Declare attackers'
                 : stack.length > 0
@@ -264,7 +264,7 @@ export default function GameBoard() {
           {!gameOver && (
             <button
               onClick={() => concede('player1')}
-              className="text-ocean-600 hover:text-red-400 text-xs transition-colors"
+              className="text-wave-indigo hover:text-red-400 text-xs transition-colors"
             >
               Concede
             </button>
@@ -273,7 +273,7 @@ export default function GameBoard() {
           {/* Back to menu */}
           <button
             onClick={() => navigate('/')}
-            className="text-ocean-600 hover:text-ocean-300 text-xs transition-colors"
+            className="text-wave-indigo hover:text-wave-foam text-xs transition-colors"
           >
             Menu
           </button>
@@ -301,7 +301,7 @@ export default function GameBoard() {
               <h2 className="font-display text-3xl text-white mb-2">
                 {winner === 'player1' ? 'Victory!' : 'Defeat'}
               </h2>
-              <p className="text-ocean-400 mb-6">{winReason}</p>
+              <p className="text-wave-slate mb-6">{winReason}</p>
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => {

@@ -37,62 +37,64 @@ export default function MainMenu() {
   }
 
   return (
-    <div className="h-full w-full bg-ocean-gradient flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Animated background bubbles */}
+    <div className="h-full w-full wave-bg flex flex-col items-center justify-center relative overflow-hidden">
+      {/* Animated foam particles */}
       <div className="absolute inset-0 pointer-events-none">
-        {[...Array(12)].map((_, i) => (
+        {[...Array(8)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute rounded-full bg-ocean-400/5"
+            className="absolute rounded-full"
             style={{
-              width: Math.random() * 100 + 30,
-              height: Math.random() * 100 + 30,
+              width: Math.random() * 4 + 2,
+              height: Math.random() * 4 + 2,
               left: `${Math.random() * 100}%`,
-              bottom: '-10%',
+              top: `${30 + Math.random() * 40}%`,
+              background: `rgba(220, 232, 240, ${Math.random() * 0.3 + 0.1})`,
             }}
             animate={{
-              y: [0, -(window.innerHeight + 200)],
-              x: [0, (Math.random() - 0.5) * 100],
+              x: [0, (Math.random() - 0.5) * 60],
+              y: [0, -30 - Math.random() * 40],
               opacity: [0, 0.6, 0],
             }}
             transition={{
-              duration: Math.random() * 8 + 8,
+              duration: Math.random() * 4 + 4,
               repeat: Infinity,
-              delay: Math.random() * 5,
+              delay: Math.random() * 3,
               ease: 'easeInOut',
             }}
           />
         ))}
       </div>
 
-      {/* Title */}
+      {/* Title area */}
       <motion.div
-        className="text-center mb-12 z-10"
+        className="text-center mb-10 z-10"
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
+        transition={{ duration: 1 }}
       >
         <motion.div
-          className="text-6xl mb-4"
-          animate={{ y: [0, -8, 0] }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          className="text-5xl mb-3"
+          animate={{ y: [0, -6, 0] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
         >
           🐠
         </motion.div>
-        <h1 className="font-display text-5xl md:text-7xl font-bold text-white mb-2 tracking-wide">
-          Project <span className="text-dory-glow">Dory</span>
+        <h1 className="font-display text-5xl md:text-7xl font-bold text-wave-cream mb-2 tracking-wide drop-shadow-lg">
+          Project <span className="text-wave-crest">Dory</span>
         </h1>
-        <p className="text-ocean-300 text-lg md:text-xl font-light tracking-wider">
-          DanDân — The Forgetful Fish Format
+        <p className="text-wave-foam/70 text-lg md:text-xl font-light tracking-widest uppercase">
+          DanDân — The Forgetful Fish
         </p>
+        <div className="mt-3 w-48 mx-auto wave-divider" />
       </motion.div>
 
       {/* Mode selection */}
       <motion.div
-        className="flex flex-col gap-4 z-10 w-full max-w-md px-6"
+        className="flex flex-col gap-3 z-10 w-full max-w-md px-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
+        transition={{ duration: 0.8, delay: 0.4 }}
       >
         {MODES.map(({ mode, label, description, icon, enabled }) => (
           <motion.button
@@ -102,8 +104,8 @@ export default function MainMenu() {
             className={`
               glass-panel p-5 text-left transition-all duration-300 group
               ${enabled
-                ? 'hover:bg-ocean-800/40 hover:border-ocean-500/50 cursor-pointer'
-                : 'opacity-40 cursor-not-allowed'
+                ? 'hover:bg-wave-prussian/40 hover:border-wave-slate/40 cursor-pointer'
+                : 'opacity-35 cursor-not-allowed'
               }
             `}
             whileHover={enabled ? { scale: 1.02, x: 4 } : {}}
@@ -112,10 +114,10 @@ export default function MainMenu() {
             <div className="flex items-center gap-4">
               <span className="text-3xl">{icon}</span>
               <div>
-                <h3 className="font-display text-lg text-white group-hover:text-dory-glow transition-colors">
+                <h3 className="font-display text-lg text-wave-cream group-hover:text-wave-crest transition-colors">
                   {label}
                 </h3>
-                <p className="text-ocean-400 text-sm">
+                <p className="text-wave-slate text-sm">
                   {description}
                   {!enabled && ' (Coming Soon)'}
                 </p>
@@ -125,15 +127,19 @@ export default function MainMenu() {
         ))}
       </motion.div>
 
-      {/* Footer */}
+      {/* Attribution footer */}
       <motion.div
-        className="absolute bottom-4 text-center text-ocean-600 text-xs z-10"
+        className="absolute bottom-4 text-center z-10 space-y-1"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
+        transition={{ delay: 1.2 }}
       >
-        <p>Card images © Wizards of the Coast · Powered by Scryfall</p>
-        <p className="mt-1">A fan project celebrating the DanDân format</p>
+        <p className="text-wave-slate/50 text-[10px]">
+          Background: "The Great Wave off Kanagawa" by Katsushika Hokusai (c. 1831) · Public Domain
+        </p>
+        <p className="text-wave-slate/40 text-[10px]">
+          Card images © Wizards of the Coast · Powered by Scryfall · A fan project
+        </p>
       </motion.div>
     </div>
   )
