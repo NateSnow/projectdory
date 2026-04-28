@@ -9,10 +9,12 @@ import PlayerInfo from './PlayerInfo'
 import PhaseTracker from './PhaseTracker'
 import SharedZones from './SharedZones'
 import GameLog from './GameLog'
+import GraveyardViewer from './GraveyardViewer'
 
 export default function GameBoard() {
   const navigate = useNavigate()
   const [logOpen, setLogOpen] = useState(false)
+  const [graveyardOpen, setGraveyardOpen] = useState(false)
   const [actionFeedback, setActionFeedback] = useState<string | null>(null)
   const cpuTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -229,6 +231,7 @@ export default function GameBoard() {
           <SharedZones
             library={sharedLibrary}
             graveyard={sharedGraveyard}
+            onGraveyardClick={() => setGraveyardOpen(true)}
           />
         </div>
 
@@ -362,6 +365,13 @@ export default function GameBoard() {
           </button>
         </div>
       </div>
+
+      {/* Graveyard Viewer */}
+      <GraveyardViewer
+        cards={sharedGraveyard}
+        isOpen={graveyardOpen}
+        onClose={() => setGraveyardOpen(false)}
+      />
 
       {/* Game Over overlay */}
       <AnimatePresence>
