@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
@@ -14,6 +14,7 @@ export default function GameBoard() {
   const navigate = useNavigate()
   const [selectedCard, setSelectedCard] = useState<string | null>(null)
   const [logOpen, setLogOpen] = useState(false)
+  const cpuTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const {
     players, sharedLibrary, sharedGraveyard,
@@ -21,55 +22,41 @@ export default function GameBoard() {
     gameOver, winner, winReason, gameLog, mode,
     waitingForMulligan,
     keepHand, takeMulligan, playLand, castSpell, passPriority,
-    tapLandForMana, drawCards, declareAttackers,
-    concede,
+    tapLandForMana, declareAttackers,
+    concede, runCpuAction,
   } = useGameStore()
 
   const player1 = players['player1']!
   const player2 = players['player2']!
-  const isMyTurn = activePlayer === 'player1'
   const isMyPriority = priorityPlayer === 'player1'
 
-  // Auto-draw on draw phase
+  // ─── CPU Game Loop ──────────────────────────────────────────────────
+  // The CPU acts whenever it has priority or needs to make a mulligan decision.
+  // We use a timer to add a natural delay between CPU actions.
   useEffect(() => {
-    if (phase === 'draw' && activePlayer === 'player1' && !waitingForMulligan) {
-      const timer = setTimeout(() => {
-        drawCards('player1', 1)
-        passPriority()
-      }, 500)
-      return () => clearTimeout(timer)
-    }
-    // CPU draw
-    if (phase === 'draw' && activePlayer === 'player2' && mode === 'cpu' && !waitingForMulligan) {
-      const timer = setTimeout(() => {
-        drawCards('player2', 1)
-        passPriority()
-      }, 800)
-      return () => clearTimeout(timer)
-    }
-  }, [phase, activePlayer, waitingForMulligan, drawCards, passPriority, mode])
+    if (mode !== 'cpu' || gameOver) return
 
-  // Auto-advance through phases where CPU has no actions
-  useEffect(() => {
-    if (mode === 'cpu' && priorityPlayer === 'player2' && !waitingForMulligan && !gameOver) {
-      const timer = setTimeout(() => {
-        passPriority()
-      }, 600)
-      return () => clearTimeout(timer)
-    }
-  }, [mode, priorityPlayer, phase, waitingForMulligan, gameOver, passPriority])
+    const cpuNeedsToAct =
+      (priorityPlayer === 'player2' && !waitingForMulligan) ||
+      (waitingForMulligan && !player2.hasKeptHand)
 
-  // CPU auto-keep hand
-  useEffect(() => {
-    if (waitingForMulligan && mode === 'cpu' && !player2.hasKeptHand) {
-      const timer = setTimeout(() => {
-        keepHand('player2')
-      }, 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [waitingForMulligan, mode, player2.hasKeptHand, keepHand])
+    if (!cpuNeedsToAct) return
 
-  // Handle card click from hand
+    // Clear any existing timer
+    if (cpuTimerRef.current) clearTimeout(cpuTimerRef.current)
+
+    // Add delay for natural feel
+    const delay = waitingForMulligan ? 800 : stack.length > 0 ? 1000 : 500
+    cpuTimerRef.current = setTimeout(() => {
+      runCpuAction()
+    }, delay)
+
+    return () => {
+      if (cpuTimerRef.current) clearTimeout(cpuTimerRef.current)
+    }
+  }, [mode, gameOver, priorityPlayer, waitingForMulligan, player2.hasKeptHand, phase, stack.length, runCpuAction])
+
+  // ─── Handle card click from hand ────────────────────────────────────
   const handleHandCardClick = useCallback((cardId: string) => {
     if (!isMyPriority && !waitingForMulligan) return
 
@@ -91,7 +78,7 @@ export default function GameBoard() {
     }
   }, [isMyPriority, waitingForMulligan, player1.hand, player1.manaPool, selectedCard, playLand, castSpell])
 
-  // Handle battlefield card click (tap for mana)
+  // ─── Handle battlefield card click (tap for mana) ───────────────────
   const handleBattlefieldClick = useCallback((cardId: string) => {
     const card = player1.battlefield.find(c => c.id === cardId)
     if (!card) return
@@ -102,7 +89,7 @@ export default function GameBoard() {
     }
   }, [player1.battlefield, tapLandForMana])
 
-  // Handle attack with all untapped Dandân
+  // ─── Handle attack ──────────────────────────────────────────────────
   const handleAttack = useCallback(() => {
     if (phase !== 'declare_attackers' || activePlayer !== 'player1') return
 
@@ -115,6 +102,18 @@ export default function GameBoard() {
 
     declareAttackers('player1', dandanIds)
   }, [phase, activePlayer, player1.battlefield, declareAttackers])
+
+  // ─── Handle skip attack ─────────────────────────────────────────────
+  const handleSkipAttack = useCallback(() => {
+    if (phase !== 'declare_attackers' || activePlayer !== 'player1') return
+    declareAttackers('player1', [])
+  }, [phase, activePlayer, declareAttackers])
+
+  // ─── Count playable Dandân for attack button ────────────────────────
+  const attackableDandanCount = player1.battlefield.filter(c => {
+    const def = getCardDefinition(c.definitionId)
+    return def.id === 'dandan' && !c.tapped && !c.summoningSick
+  }).length
 
   return (
     <div className="h-full w-full bg-ocean-gradient flex flex-col relative overflow-hidden">
@@ -159,17 +158,27 @@ export default function GameBoard() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
             >
-              {stack.map((item) => {
-                const def = getCardDefinition(item.definitionId)
-                return (
-                  <div
-                    key={item.id}
-                    className="glass-panel px-3 py-1.5 text-xs text-dory-glow border-dory-glow/30"
-                  >
-                    {def.name} ({players[item.caster]?.name})
-                  </div>
-                )
-              })}
+              <div className="glass-panel px-3 py-2 border-dory-glow/30">
+                <div className="text-[10px] text-ocean-500 mb-1">Stack</div>
+                <div className="flex flex-col-reverse gap-1">
+                  {stack.map((item, i) => {
+                    const def = getCardDefinition(item.definitionId)
+                    const casterName = players[item.caster]?.name ?? 'Unknown'
+                    return (
+                      <div
+                        key={item.id}
+                        className={`text-xs px-2 py-1 rounded ${
+                          i === stack.length - 1
+                            ? 'text-dory-glow bg-ocean-800/60'
+                            : 'text-ocean-400 bg-ocean-900/40'
+                        }`}
+                      >
+                        {def.name} <span className="text-ocean-500">({casterName})</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -203,7 +212,21 @@ export default function GameBoard() {
           hasPriority={priorityPlayer === 'player1'}
         />
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {/* Phase hint */}
+          {!waitingForMulligan && isMyPriority && !gameOver && (
+            <span className="text-ocean-500 text-xs mr-2">
+              {phase === 'declare_attackers' && activePlayer === 'player1'
+                ? 'Declare attackers'
+                : stack.length > 0
+                  ? 'Respond or pass'
+                  : phase === 'main1' || phase === 'main2'
+                    ? 'Play cards or pass'
+                    : 'Pass to continue'
+              }
+            </span>
+          )}
+
           {/* Mulligan buttons */}
           {waitingForMulligan && !player1.hasKeptHand && (
             <>
@@ -216,15 +239,22 @@ export default function GameBoard() {
             </>
           )}
 
-          {/* Attack button */}
-          {phase === 'declare_attackers' && isMyTurn && (
-            <button onClick={handleAttack} className="btn-primary text-sm">
-              ⚔️ Attack
-            </button>
+          {/* Attack buttons */}
+          {phase === 'declare_attackers' && activePlayer === 'player1' && isMyPriority && (
+            <>
+              {attackableDandanCount > 0 && (
+                <button onClick={handleAttack} className="btn-primary text-sm">
+                  ⚔️ Attack ({attackableDandanCount})
+                </button>
+              )}
+              <button onClick={handleSkipAttack} className="btn-secondary text-sm">
+                Skip Attack
+              </button>
+            </>
           )}
 
           {/* Pass priority */}
-          {!waitingForMulligan && isMyPriority && !gameOver && (
+          {!waitingForMulligan && isMyPriority && !gameOver && phase !== 'declare_attackers' && (
             <button onClick={passPriority} className="btn-secondary text-sm">
               Pass →
             </button>
