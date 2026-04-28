@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dory-deeper text-white font-body antialiased;
+    overflow: hidden;
+  }
+
+  #root {
+    @apply h-screen w-screen;
+  }
+}
+
+@layer components {
+  .card-back {
+    @apply rounded-lg border-2 border-ocean-700/50;
+    background: linear-gradient(135deg, #1a3a5c 0%, #0d2847 50%, #1a3a5c 100%);
+    background-size: 200% 200%;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 rounded-lg font-display font-semibold text-white
+           bg-gradient-to-r from-ocean-600 to-ocean-700
+           hover:from-ocean-500 hover:to-ocean-600
+           active:from-ocean-700 active:to-ocean-800
+           transition-all duration-200 shadow-lg
+           hover:shadow-glow hover:-translate-y-0.5;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 rounded-lg font-body text-ocean-200
+           border border-ocean-600/50 bg-ocean-900/30
+           hover:bg-ocean-800/40 hover:border-ocean-500/60
+           transition-all duration-200;
+  }
+
+  .glass-panel {
+    @apply bg-ocean-950/60 backdrop-blur-md border border-ocean-700/30 rounded-xl;
+  }
+
+  .phase-active {
+    @apply text-dory-glow font-semibold;
+    text-shadow: 0 0 8px rgba(79, 195, 247, 0.5);
+  }
+
+  .zone-highlight {
+    @apply ring-2 ring-dory-glow/40 ring-offset-2 ring-offset-dory-dark;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(10, 22, 40, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(79, 195, 247, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(79, 195, 247, 0.5);
+}
