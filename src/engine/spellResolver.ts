@@ -380,19 +380,21 @@ function resolveBrainstorm(state: GameState, caster: string, card: CardInstance)
  * shared graveyard.
  */
 function resolveAccumulatedKnowledge(state: GameState, caster: string, card: CardInstance): GameState {
-  // Count AK in graveyard BEFORE this one goes there
+  // Count AK in graveyard BEFORE this one goes there (per oracle text)
   const akInGraveyard = state.sharedGraveyard.filter(
     c => c.definitionId === 'accumulated_knowledge'
   ).length
 
   const drawCount = 1 + akInGraveyard
 
-  // Put AK in graveyard first (so it counts for future AKs)
-  let result = toGraveyard(state, card)
-  result = drawCards(result, caster, drawCount)
+  let result = drawCards(state, caster, drawCount)
+  if (result.gameOver) return result
+
+  // Now put AK in graveyard (after drawing, so it doesn't count itself)
+  result = toGraveyard(result, card)
 
   result = addLogEntry(result, getPlayer(result, caster).name,
-    `drew ${drawCount} cards from Accumulated Knowledge`)
+    `drew ${drawCount} card${drawCount > 1 ? 's' : ''} from Accumulated Knowledge`)
 
   return result
 }

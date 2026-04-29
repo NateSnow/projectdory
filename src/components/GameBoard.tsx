@@ -100,6 +100,28 @@ export default function GameBoard() {
     }
   }, [mode, gameOver, priorityPlayer, waitingForMulligan, player2.hasKeptHand, phase, stack.length, runCpuAction])
 
+  // ─── Auto-pass for human when no responses available ────────────────
+  // Like Arena: if you have priority but can't do anything meaningful,
+  // auto-pass after a short delay. This prevents the game from stalling
+  // on phases like upkeep, draw, combat steps where you have no instants.
+  useEffect(() => {
+    if (!isMyPriority || waitingForMulligan || gameOver) return
+    if (phase === 'declare_attackers' && isMyTurn) return // player needs to choose attackers
+
+    // During main phases, don't auto-pass — player might want to play cards
+    if ((phase === 'main1' || phase === 'main2') && stack.length === 0) return
+
+    // If there are playable cards (instants to respond with), don't auto-pass
+    if (playableCardIds.size > 0) return
+
+    // Auto-pass after a brief delay
+    const timer = setTimeout(() => {
+      passPriority()
+    }, 400)
+
+    return () => clearTimeout(timer)
+  }, [isMyPriority, isMyTurn, waitingForMulligan, gameOver, phase, stack.length, playableCardIds.size, passPriority])
+
   // ─── Handle card click from hand — Arena-style single click ─────────
   const handleHandCardClick = useCallback((cardId: string) => {
     if (waitingForMulligan) return // during mulligan, cards aren't playable
@@ -305,7 +327,7 @@ export default function GameBoard() {
               {phase === 'declare_attackers' && isMyTurn
                 ? 'Declare attackers'
                 : stack.length > 0
-                  ? 'Respond or pass'
+                  ? 'Click Resolve or cast an instant'
                   : phase === 'main1' || phase === 'main2'
                     ? 'Click a card to play it'
                     : 'Pass to continue'
@@ -339,11 +361,17 @@ export default function GameBoard() {
             </>
           )}
 
-          {/* Pass priority */}
+          {/* Pass priority / Resolve */}
           {!waitingForMulligan && isMyPriority && !gameOver && phase !== 'declare_attackers' && (
-            <button onClick={passPriority} className="btn-secondary text-sm">
-              Pass →
-            </button>
+            stack.length > 0 ? (
+              <button onClick={passPriority} className="btn-primary text-sm animate-pulse-glow">
+                ✓ Resolve
+              </button>
+            ) : (
+              <button onClick={passPriority} className="btn-secondary text-sm">
+                Pass →
+              </button>
+            )
           )}
 
           {/* Concede */}
